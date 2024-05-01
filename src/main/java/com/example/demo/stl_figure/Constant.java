@@ -22,6 +22,9 @@ public class Constant {
     public static String choose = "Click OK to exit or Cancel to stay.";
     public static String dialogTitle = "Connect Hub";
     public static String appTitle = "STL visualizer";
+    public static String menu1 = "File";
+    public static String menuItem1 = "Connect";
+    public static String menuItem2 = "Exit";
 
     public static String lineXtoX(int i) {
         return "Invalid vertex format. Look between line " + (i + 1) + " and " + (i + 3);

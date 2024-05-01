@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.stl_figure.Constant;
 import com.example.demo.stl_figure.manager.converter.Converter;
 import com.example.demo.stl_figure.manager.stl.STLReaderImpl;
 import com.example.demo.stl_figure.model.Polyhedron;
@@ -34,7 +35,7 @@ public class HelloApplication extends Application {
 
         Scene scene = new Scene(fxmlLoader.load());
 
-        stage.setTitle("STL visualizer");
+        stage.setTitle(Constant.appTitle);
         stage.setScene(scene);
         stage.show();
     }

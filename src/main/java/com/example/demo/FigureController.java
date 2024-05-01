@@ -1,9 +1,6 @@
 package com.example.demo;
 
-import com.example.demo.network.ConnectState;
-import com.example.demo.network.Guest;
-import com.example.demo.network.Host;
-import com.example.demo.network.Node;
+import com.example.demo.stl_figure.Constant;
 import com.example.demo.stl_figure.exception.Exception;
 import com.example.demo.stl_figure.manager.stl.STLReaderImpl;
 import com.example.demo.stl_figure.model.Facet;
@@ -37,7 +34,6 @@ import static javafx.application.Platform.exit;
 
 
 public class FigureController implements Initializable {
-    public static Node node;
     @FXML
     private TextField colorCode;
 
@@ -59,16 +55,16 @@ public class FigureController implements Initializable {
 
     public MenuBar createMenu() {
         MenuBar menuBar = new MenuBar();
-        Menu fileMenu = new Menu("File");
-        MenuItem connectMenuItem = new MenuItem("Connect");
-        MenuItem exitMenuItem = new MenuItem("Exit");
+        Menu fileMenu = new Menu(Constant.menu1);
+        MenuItem connectMenuItem = new MenuItem(Constant.menuItem1);
+        MenuItem exitMenuItem = new MenuItem(Constant.menuItem2);
         fileMenu.getItems().addAll(connectMenuItem, exitMenuItem);
         menuBar.getMenus().add(fileMenu);
 
 
         connectMenuItem.setOnAction(event -> {
-            String[] options = {ConnectState.GUEST.name(), ConnectState.HOST.name()};
-            Alert customDialog = createCustomDialog("Connect Hub", "Select Option", "Enter IP Address:", options);
+            String[] options = {};
+            Alert customDialog = createCustomDialog(Constant.dialogTitle, Constant.selectOption, Constant.enterIp, options);
             customDialog.getButtonTypes().add(ButtonType.CANCEL);
 
             customDialog.show();
@@ -76,9 +72,9 @@ public class FigureController implements Initializable {
 
         exitMenuItem.setOnAction(event -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Exit Confirmation");
-            alert.setHeaderText("Are you sure you want to exit?");
-            alert.setContentText("Click OK to exit or Cancel to stay.");
+            alert.setTitle(Constant.exitConfirmation);
+            alert.setHeaderText(Constant.wantToExit);
+            alert.setContentText(Constant.choose);
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == javafx.scene.control.ButtonType.OK) {
@@ -90,7 +86,7 @@ public class FigureController implements Initializable {
         return menuBar;
     }
 
-    public static TriangleMesh generateTriangleMesh(Polyhedron polyhedron) throws URISyntaxException, IOException {
+    public static TriangleMesh generateTriangleMesh(Polyhedron polyhedron) {
         TriangleMesh mesh = new TriangleMesh();
 
         int i = -1;
@@ -147,8 +143,6 @@ public class FigureController implements Initializable {
                     mesh.setLayoutX(aX);
                     mesh.setLayoutY(aY);
 
-                    if(node != null)
-                        node.changePosition(aX + ";" + aY);
                 } else {
                     double rot = -1;
                     if(mesh.getRotationAxis().equals(Rotate.X_AXIS)) {
@@ -162,9 +156,6 @@ public class FigureController implements Initializable {
                         mesh.setRotate(rot);
                     }
 
-                    if(node != null && rot != -1)
-                        node.changeRotation(rot + "");
-
                 }
             }
         });
@@ -173,25 +164,19 @@ public class FigureController implements Initializable {
     @FXML
     void translate(ActionEvent event) {
         this.isTranslate = true;
-
-        if(node != null)
-            node.translate();
     }
 
     @FXML
     void rotate(ActionEvent event) {
         this.isTranslate = false;
-
-        if(node != null)
-            node.rotate();
     }
 
     @FXML
     void applyColorCode(ActionEvent event) {
-        String[] colorComponents = colorCode.getText().trim().split(";");
+        String[] colorComponents = colorCode.getText().trim().split(Constant.comma);
 
         if(colorComponents.length < 3 || colorComponents.length > 4)
-            Exception.raiseException("Invalid color code, exemple .123;.23;.34 or .123;.34;.34;0.2");
+            Exception.raiseException(Constant.invalidColor);
 
         if(colorComponents.length == 3) {
             mesh.setMaterial(new PhongMaterial(new Color(
@@ -200,8 +185,6 @@ public class FigureController implements Initializable {
                     toDouble(colorComponents[2]),
                     0.0
             )));
-            if (node != null)
-                node.changeColor(colorCode.getText().trim() + ";1");
         } else {
             mesh.setMaterial(new PhongMaterial(new Color(
                     toDouble(colorComponents[0]),
@@ -209,8 +192,6 @@ public class FigureController implements Initializable {
                     toDouble(colorComponents[2]),
                     toDouble(colorComponents[3])
             )));
-            if (node != null)
-                node.changeColor(colorCode.getText().trim());
         }
     }
 
@@ -218,7 +199,7 @@ public class FigureController implements Initializable {
         try{
             return Double.parseDouble(value);
         }catch(java.lang.Exception e) {
-            Exception.raiseException("Invalid color component. one of your color component are not double");
+            Exception.raiseException(Constant.invalidColorComponent);
         }
         return .0;
     }
@@ -228,59 +209,42 @@ public class FigureController implements Initializable {
         STLReaderImpl s = new STLReaderImpl();
 
         Polyhedron polyhedron = s.readSTLFile(fileName.getText());
-
-        if(node != null)
-            node.changeData(polyhedron);
         mesh.setMesh(generateTriangleMesh(polyhedron));
     }
 
     @FXML
     void rotationAxeX(ActionEvent event) {
         mesh.setRotationAxis(Rotate.X_AXIS);
-        if(node != null)
-            node.changeAxe("X");
     }
 
     @FXML
     void rotationAxeY(ActionEvent event) {
         mesh.setRotationAxis(Rotate.Y_AXIS);
-        if(node != null)
-            node.changeAxe("Y");
     }
 
     @FXML
     void rotationAllAxes(ActionEvent event) {
         mesh.setRotationAxis(new Point3D(150, 50, 100));
-        if(node != null)
-            node.changePoint("150;50;100");
     }
 
     @FXML
     void rotationAxeZ(ActionEvent event) {
         mesh.setRotationAxis(Rotate.Z_AXIS);
-        if(node != null)
-            node.changeAxe("Z");
     }
 
     @FXML
     void setBlueColor(ActionEvent event) {
         mesh.setMaterial(new PhongMaterial(new Color(0, 0, 1, 1)));
-        if(node != null)
-            node.changeColor("0;0;1;1");
     }
 
     @FXML
     void setGreenColor(ActionEvent event) {
         mesh.setMaterial(new PhongMaterial(new Color(0, 1, 0, 1)));
-        if(node != null)
-            node.changeColor("0;1;0;1");
     }
 
     @FXML
     void setRedColor(ActionEvent event) {
         mesh.setMaterial(new PhongMaterial(new Color(1, 0, 0, 1)));
-        if(node != null)
-            node.changeColor("1;0;0;1");
     }
 
     @Override
@@ -305,16 +269,16 @@ public class FigureController implements Initializable {
         ComboBox<String> comboBox = new ComboBox<>();
         comboBox.getItems().addAll(options);
         TextField ipTextField = new TextField();
-        Button validateButton = new Button("Validate");
+        Button validateButton = new Button(Constant.validateButton);
         Label errorLabel = new Label();
 
         GridPane gridPane = new GridPane();
         gridPane.setHgap(10);
         gridPane.setVgap(10);
 
-        gridPane.add(new Label("Select Option:"), 0, 0);
+        gridPane.add(new Label(Constant.selectOption), 0, 0);
         gridPane.add(comboBox, 1, 0);
-        gridPane.add(new Label("Enter IP:"), 0, 1);
+        gridPane.add(new Label(Constant.enterIp), 0, 1);
         gridPane.add(ipTextField, 1, 1);
         gridPane.add(validateButton, 0, 2);
         gridPane.add(errorLabel, 1, 2);
@@ -324,15 +288,7 @@ public class FigureController implements Initializable {
         validateButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                String response = comboBox.getValue();
-                System.out.println(response);
-                if(response != null) {
-                    if(response == ConnectState.HOST.name()) {
-                        FigureController.node = new Host(mesh).runThread(ipTextField.getText());
-                    } else if(response == ConnectState.GUEST.name()) {
-                        FigureController.node = new Guest(mesh).runThread(ipTextField.getText());
-                    }
-                }
+                // code that handle the click on validate button
             }
         });
 
