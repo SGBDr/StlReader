@@ -1,11 +1,13 @@
 package com.example.demo;
 
-import com.example.demo.stl_figure.Constant;
-import com.example.demo.stl_figure.exception.Exception;
-import com.example.demo.stl_figure.manager.stl.STLReaderImpl;
+import com.example.demo.network.ConnectState;
+import com.example.demo.network.Node;
+import com.example.demo.Utils.Strings;
+import com.example.demo.Utils.Exception;
+import com.example.demo.stl_figure.manager.stl.StlReader;
 import com.example.demo.stl_figure.model.Facet;
-import com.example.demo.stl_figure.model.Polyhedron;
-import com.example.demo.stl_figure.model.Top;
+import com.example.demo.stl_figure.model.Polyeder;
+import com.example.demo.stl_figure.model.Vertex;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -16,7 +18,6 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
@@ -30,10 +31,13 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import static com.example.demo.Utils.Strings.*;
 import static javafx.application.Platform.exit;
 
 
 public class FigureController implements Initializable {
+    public static Node node;
+
     @FXML
     private TextField colorCode;
 
@@ -55,16 +59,16 @@ public class FigureController implements Initializable {
 
     public MenuBar createMenu() {
         MenuBar menuBar = new MenuBar();
-        Menu fileMenu = new Menu(Constant.menu1);
-        MenuItem connectMenuItem = new MenuItem(Constant.menuItem1);
-        MenuItem exitMenuItem = new MenuItem(Constant.menuItem2);
+        Menu fileMenu = new Menu(Strings.menu1);
+        MenuItem connectMenuItem = new MenuItem(Strings.menuItem1);
+        MenuItem exitMenuItem = new MenuItem(Strings.menuItem2);
         fileMenu.getItems().addAll(connectMenuItem, exitMenuItem);
         menuBar.getMenus().add(fileMenu);
 
 
         connectMenuItem.setOnAction(event -> {
-            String[] options = {};
-            Alert customDialog = createCustomDialog(Constant.dialogTitle, Constant.selectOption, Constant.enterIp, options);
+            String[] options = {ConnectState.GUEST.name(), ConnectState.HOST.name()};
+            Alert customDialog = CustomDialog.createCustomDialog(Strings.dialogTitle, Strings.selectOption, Strings.enterIp, options, fileName, colorCode, mesh);
             customDialog.getButtonTypes().add(ButtonType.CANCEL);
 
             customDialog.show();
@@ -72,9 +76,9 @@ public class FigureController implements Initializable {
 
         exitMenuItem.setOnAction(event -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle(Constant.exitConfirmation);
-            alert.setHeaderText(Constant.wantToExit);
-            alert.setContentText(Constant.choose);
+            alert.setTitle(Strings.exitConfirmation);
+            alert.setHeaderText(Strings.wantToExit);
+            alert.setContentText(Strings.choose);
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == javafx.scene.control.ButtonType.OK) {
@@ -86,15 +90,15 @@ public class FigureController implements Initializable {
         return menuBar;
     }
 
-    public static TriangleMesh generateTriangleMesh(Polyhedron polyhedron) {
+    public static TriangleMesh generateTriangleMesh(Polyeder polyeder) {
         TriangleMesh mesh = new TriangleMesh();
 
         int i = -1;
-        List<Top> aTop = polyhedron.getAllTops();
-        for(Facet facet : polyhedron.getFacets()) {
-            Top t1 = aTop.get(i + 1);
-            Top t2 = aTop.get(i + 2);
-            Top t3 = aTop.get(i + 3);
+        List<Vertex> aVertex = polyeder.getAllTops();
+        for(Facet ignored : polyeder.getFacets()) {
+            Vertex t1 = aVertex.get(i + 1);
+            Vertex t2 = aVertex.get(i + 2);
+            Vertex t3 = aVertex.get(i + 3);
 
             mesh.getPoints().addAll(
                     t1.getX(), t1.getY(), t1.getZ(),
@@ -126,57 +130,64 @@ public class FigureController implements Initializable {
     }
 
     private void defineListener() {
-        scene.setOnMousePressed(new EventHandler<MouseEvent>() {
-            @Override public void handle(MouseEvent event) {
-                anchorX = event.getSceneX();
-                anchorY = event.getSceneY();
-                anchorAngle = mesh.getRotate();
-            }
+        scene.setOnMousePressed(event -> {
+            anchorX = event.getSceneX();
+            anchorY = event.getSceneY();
+            anchorAngle = mesh.getRotate();
         });
 
-        scene.setOnMouseDragged(new EventHandler<MouseEvent>() {
-            @Override public void handle(MouseEvent event) {
+        scene.setOnMouseDragged(event -> {
 
-                if( isTranslate ) {
-                    double aX = event.getX(), aY = event.getY();
+            if( isTranslate ) {
+                double aX = event.getX(), aY = event.getY();
 
-                    mesh.setLayoutX(aX);
-                    mesh.setLayoutY(aY);
+                mesh.setLayoutX(aX);
+                mesh.setLayoutY(aY);
 
+                if(node != null)
+                    node.changePosition(aX + Strings.comma + aY);
+            } else {
+                double rot = -1;
+                if(mesh.getRotationAxis().equals(Rotate.X_AXIS)) {
+                    rot = anchorAngle + anchorY - event.getSceneY();
+                    mesh.setRotate(rot);
+                } else if(mesh.getRotationAxis().equals(Rotate.Y_AXIS)) {
+                    rot = anchorAngle + anchorX - event.getSceneX();
+                    mesh.setRotate(rot);
                 } else {
-                    double rot = -1;
-                    if(mesh.getRotationAxis().equals(Rotate.X_AXIS)) {
-                        rot = anchorAngle + anchorY - event.getSceneY();
-                        mesh.setRotate(rot);
-                    } else if(mesh.getRotationAxis().equals(Rotate.Y_AXIS)) {
-                        rot = anchorAngle + anchorX - event.getSceneX();
-                        mesh.setRotate(rot);
-                    } else {
-                        rot = anchorAngle + (anchorY + anchorX - event.getSceneY() - event.getSceneX());
-                        mesh.setRotate(rot);
-                    }
-
+                    rot = anchorAngle + (anchorY + anchorX - event.getSceneY() - event.getSceneX());
+                    mesh.setRotate(rot);
                 }
+
+                if(node != null && rot != -1)
+                    node.changeRotation(rot + Strings.empty);
+
             }
         });
     }
 
     @FXML
     void translate(ActionEvent event) {
-        this.isTranslate = true;
+        isTranslate = true;
+
+        if(node != null)
+            node.translate();
     }
 
     @FXML
     void rotate(ActionEvent event) {
-        this.isTranslate = false;
+        isTranslate = false;
+
+        if(node != null)
+            node.rotate();
     }
 
     @FXML
     void applyColorCode(ActionEvent event) {
-        String[] colorComponents = colorCode.getText().trim().split(Constant.comma);
+        String[] colorComponents = colorCode.getText().trim().split(Strings.comma);
 
         if(colorComponents.length < 3 || colorComponents.length > 4)
-            Exception.raiseException(Constant.invalidColor);
+            Exception.raise(Strings.invalidColor);
 
         if(colorComponents.length == 3) {
             mesh.setMaterial(new PhongMaterial(new Color(
@@ -185,6 +196,8 @@ public class FigureController implements Initializable {
                     toDouble(colorComponents[2]),
                     0.0
             )));
+            if (node != null)
+                node.changeColor(colorCode.getText().trim() + END_OF_COLOR);
         } else {
             mesh.setMaterial(new PhongMaterial(new Color(
                     toDouble(colorComponents[0]),
@@ -192,6 +205,8 @@ public class FigureController implements Initializable {
                     toDouble(colorComponents[2]),
                     toDouble(colorComponents[3])
             )));
+            if (node != null)
+                node.changeColor(colorCode.getText().trim());
         }
     }
 
@@ -199,52 +214,71 @@ public class FigureController implements Initializable {
         try{
             return Double.parseDouble(value);
         }catch(java.lang.Exception e) {
-            Exception.raiseException(Constant.invalidColorComponent);
+            Exception.raise(Strings.invalidColorComponent);
         }
         return .0;
     }
 
     @FXML
-    void loadNewStl(ActionEvent event) throws URISyntaxException, IOException {
-        STLReaderImpl s = new STLReaderImpl();
+    void loadNewStl(ActionEvent event) throws IOException {
+        StlReader s = new StlReader();
 
-        Polyhedron polyhedron = s.readSTLFile(fileName.getText());
-        mesh.setMesh(generateTriangleMesh(polyhedron));
+        Polyeder polyeder = s.readPolyedre(fileName.getText());
+
+        if(node != null)
+            node.changeData(polyeder);
+
+        this.fileName.setText(polyeder.getName());
+        mesh.setMesh(generateTriangleMesh(polyeder));
     }
 
     @FXML
     void rotationAxeX(ActionEvent event) {
         mesh.setRotationAxis(Rotate.X_AXIS);
+        if(node != null)
+            node.changeAxe(AXE_X);
     }
 
     @FXML
     void rotationAxeY(ActionEvent event) {
         mesh.setRotationAxis(Rotate.Y_AXIS);
+        if(node != null)
+            node.changeAxe(AXE_Y);
     }
 
     @FXML
     void rotationAllAxes(ActionEvent event) {
         mesh.setRotationAxis(new Point3D(150, 50, 100));
+        if(node != null)
+            node.changePoint(ROTATION_POINT);
     }
 
     @FXML
     void rotationAxeZ(ActionEvent event) {
         mesh.setRotationAxis(Rotate.Z_AXIS);
+        if(node != null)
+            node.changeAxe(AXE_Z);
     }
 
     @FXML
     void setBlueColor(ActionEvent event) {
         mesh.setMaterial(new PhongMaterial(new Color(0, 0, 1, 1)));
+        if(node != null)
+            node.changeColor(COLOR_BLUE);
     }
 
     @FXML
     void setGreenColor(ActionEvent event) {
         mesh.setMaterial(new PhongMaterial(new Color(0, 1, 0, 1)));
+        if(node != null)
+            node.changeColor(COLOR_GREEN);
     }
 
     @FXML
     void setRedColor(ActionEvent event) {
         mesh.setMaterial(new PhongMaterial(new Color(1, 0, 0, 1)));
+        if(node != null)
+            node.changeColor(COLOR_RED);
     }
 
     @Override
@@ -258,40 +292,5 @@ public class FigureController implements Initializable {
         borderPane.setTop(createMenu());
 
         defineListener();
-    }
-
-    public Alert createCustomDialog(String title, String headerText, String contentText, String[] options) {
-        Alert alert = new Alert(Alert.AlertType.NONE);
-        alert.setTitle(title);
-        alert.setHeaderText(headerText);
-        alert.setContentText(contentText);
-
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll(options);
-        TextField ipTextField = new TextField();
-        Button validateButton = new Button(Constant.validateButton);
-        Label errorLabel = new Label();
-
-        GridPane gridPane = new GridPane();
-        gridPane.setHgap(10);
-        gridPane.setVgap(10);
-
-        gridPane.add(new Label(Constant.selectOption), 0, 0);
-        gridPane.add(comboBox, 1, 0);
-        gridPane.add(new Label(Constant.enterIp), 0, 1);
-        gridPane.add(ipTextField, 1, 1);
-        gridPane.add(validateButton, 0, 2);
-        gridPane.add(errorLabel, 1, 2);
-
-        alert.getDialogPane().setContent(gridPane);
-
-        validateButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                // code that handle the click on validate button
-            }
-        });
-
-        return alert;
     }
 }
