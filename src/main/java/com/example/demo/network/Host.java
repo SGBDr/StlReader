@@ -1,18 +1,22 @@
 package com.example.demo.network;
 
+import com.example.demo.Utils.Out;
 import javafx.concurrent.Task;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.shape.MeshView;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
 
-public class Host extends Node {
-    private MeshView mesh;
+import static com.example.demo.Utils.Strings.*;
 
-    public Host(MeshView mesh) {
-        super(mesh);
-        this.mesh = mesh;
+public class Host extends Node {
+
+    public Host(MeshView mesh, TextField filename, TextField colorCode, Label errorLabel) {
+        super(mesh, filename, colorCode, errorLabel);
+
     }
 
     public Node runThread(String ip) {
@@ -24,22 +28,25 @@ public class Host extends Node {
         return new Task<>() {
             @Override
             protected Void call() {
-                int port = 5000;
-                try (ServerSocket serverSocket = new ServerSocket(port)) {
-                    System.out.println("Waiting for connexion");
+                try (ServerSocket serverSocket = new ServerSocket(DEFAULT_PORT)) {
+                    displayText(WAITING);
                     try {
                         socket(serverSocket.accept());
-                        System.out.println("Someone connected");
                         com.example.demo.network.State.connect = true;
+                        displayText(SOMEONE_CONNECTED);
                         out(new PrintWriter(socket().getOutputStream(), true));
 
                         process();
                     }
                     catch (IOException | ClassNotFoundException | URISyntaxException e) {
-                        e.printStackTrace();
+                        Out.print(e.getMessage());
+                        displayText(CONNEXION_FAIL);
+                        com.example.demo.network.State.connect = false;
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Out.print(e.getMessage());
+                    displayText(CONNEXION_FAIL);
+                    com.example.demo.network.State.connect = false;
                 }
                 return null;
             }

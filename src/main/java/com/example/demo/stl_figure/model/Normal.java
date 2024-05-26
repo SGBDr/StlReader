@@ -9,9 +9,10 @@ public class Normal implements Serializable {
 
     public Normal(Vertex normal) {
         float[] coord = normal.getCoord();
-        this.nX = coord[0];
-        this.nY = coord[1];
-        this.nZ = coord[2];
+        double norm = Math.sqrt(Math.pow(coord[0], 2) + Math.pow(coord[1], 2) + Math.pow(coord[2], 2));
+        this.nX = coord[0]/norm;
+        this.nY = coord[1]/norm;
+        this.nZ = coord[2]/norm;
     }
 
     @Override

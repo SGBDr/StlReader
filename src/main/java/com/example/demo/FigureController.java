@@ -1,21 +1,19 @@
 package com.example.demo;
 
+import com.example.demo.Utils.Out;
 import com.example.demo.network.ConnectState;
 import com.example.demo.network.Node;
 import com.example.demo.Utils.Strings;
-import com.example.demo.Utils.Exception;
 import com.example.demo.stl_figure.manager.stl.StlReader;
 import com.example.demo.stl_figure.model.Facet;
 import com.example.demo.stl_figure.model.Polyeder;
 import com.example.demo.stl_figure.model.Vertex;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
 import javafx.scene.control.*;
 import javafx.scene.effect.BlendMode;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
@@ -26,11 +24,11 @@ import javafx.scene.shape.TriangleMesh;
 import javafx.scene.transform.Rotate;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import static com.example.demo.Utils.Parser.toDouble;
 import static com.example.demo.Utils.Strings.*;
 import static javafx.application.Platform.exit;
 
@@ -150,14 +148,14 @@ public class FigureController implements Initializable {
                 double rot = -1;
                 if(mesh.getRotationAxis().equals(Rotate.X_AXIS)) {
                     rot = anchorAngle + anchorY - event.getSceneY();
-                    mesh.setRotate(rot);
                 } else if(mesh.getRotationAxis().equals(Rotate.Y_AXIS)) {
                     rot = anchorAngle + anchorX - event.getSceneX();
-                    mesh.setRotate(rot);
                 } else {
                     rot = anchorAngle + (anchorY + anchorX - event.getSceneY() - event.getSceneX());
-                    mesh.setRotate(rot);
                 }
+
+                if(rot != -1)
+                    mesh.setRotate(rot);
 
                 if(node != null && rot != -1)
                     node.changeRotation(rot + Strings.empty);
@@ -187,7 +185,7 @@ public class FigureController implements Initializable {
         String[] colorComponents = colorCode.getText().trim().split(Strings.comma);
 
         if(colorComponents.length < 3 || colorComponents.length > 4)
-            Exception.raise(Strings.invalidColor);
+            Out.exception(Strings.invalidColor);
 
         if(colorComponents.length == 3) {
             mesh.setMaterial(new PhongMaterial(new Color(
@@ -208,15 +206,6 @@ public class FigureController implements Initializable {
             if (node != null)
                 node.changeColor(colorCode.getText().trim());
         }
-    }
-
-    private double toDouble(String value) {
-        try{
-            return Double.parseDouble(value);
-        }catch(java.lang.Exception e) {
-            Exception.raise(Strings.invalidColorComponent);
-        }
-        return .0;
     }
 
     @FXML

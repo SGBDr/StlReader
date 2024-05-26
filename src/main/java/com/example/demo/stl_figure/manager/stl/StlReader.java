@@ -1,9 +1,6 @@
 package com.example.demo.stl_figure.manager.stl;
 
-
-import com.example.demo.Utils.Strings;
 import com.example.demo.Utils.Out;
-import com.example.demo.Utils.Exception;
 import com.example.demo.stl_figure.model.*;
 
 import java.io.BufferedReader;
@@ -28,14 +25,14 @@ public class StlReader {
             if(i == lines.size() - 1)
                 break;
             else if(i == 0) {
-                if(line.startsWith(Strings.START_OF_ASCII))
-                    name = line.replace(Strings.START_OF_ASCII, empty);
+                if(line.startsWith(START_OF_ASCII))
+                    name = line.replace(START_OF_ASCII, empty);
                 else
-                    Exception.raise(Strings.errorLine(i + 1));
+                    Out.exception(errorLine(i + 1));
                 i++;
             }else {
-                if(line.startsWith(Strings.START_OF_FACET)) {
-                    line = line.replace(Strings.START_OF_FACET, empty);
+                if(line.startsWith(START_OF_FACET)) {
+                    line = line.replace(START_OF_FACET, empty);
                     String[] normalCoord = line.split(space);
                     Vertex normal = getCoord(normalCoord);
 
@@ -56,7 +53,7 @@ public class StlReader {
                     facets.add(facet);
                     i += 7;
                 } else
-                    Exception.raise(Strings.errorLine(i + 1));
+                    Out.exception(errorLine(i + 1));
             }
         }
 
@@ -73,13 +70,13 @@ public class StlReader {
 
             if(i == lines.size() - 1)
                 break;
-            else if(line.startsWith(Strings.START_OF_TRIANGLE)) {
-                String normalString = lines.get(i + 2).replace(Strings.START_OF_TRIANGLE, empty);
+            else if(line.startsWith(START_OF_TRIANGLE)) {
+                String normalString = lines.get(i + 2).replace(START_OF_TRIANGLE, empty);
                 Vertex normal = getCoord(normalString.split(space));
 
-                String vertex1 = lines.get(i + 4).replace(Strings.START_OF_TRIANGLE, empty);
-                String vertex2 = lines.get(i + 6).replace(Strings.START_OF_TRIANGLE, empty);
-                String vertex3 = lines.get(i + 8).replace(Strings.START_OF_TRIANGLE, empty);
+                String vertex1 = lines.get(i + 4).replace(START_OF_TRIANGLE, empty);
+                String vertex2 = lines.get(i + 6).replace(START_OF_TRIANGLE, empty);
+                String vertex3 = lines.get(i + 8).replace(START_OF_TRIANGLE, empty);
 
                 List<Vertex> vertices = List.of(
                         getCoord(vertex1.split(space)), getCoord(vertex2.split(space)), getCoord(vertex3.split(" "))
@@ -98,10 +95,10 @@ public class StlReader {
 
                 i += 11;
             }else
-                Exception.raise(Strings.errorLine(i + 1));
+                Out.exception(errorLine(i + 1));
         }
 
-        return new Polyeder(Strings.DEFAULT_NAME_FOR_BIN_STL, facets);
+        return new Polyeder(DEFAULT_NAME_FOR_BIN_STL, facets);
     }
 
 
@@ -115,7 +112,7 @@ public class StlReader {
             return readBin(lines);
         }
 
-        Exception.raise(Strings.UNKNOWN_FILE);
+        Out.exception(UNKNOWN_FILE);
         return null;
     }
 
@@ -123,7 +120,7 @@ public class StlReader {
     private List<String> readAllLines(String filename) {
         List<String> listLine = new ArrayList<>();
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(Strings.SRC_MAIN_RESOURCES + filename));
+            BufferedReader reader = new BufferedReader(new FileReader(SRC_MAIN_RESOURCES + filename));
             String line;
             while ((line = reader.readLine()) != null) {
                 if(!line.isEmpty())
